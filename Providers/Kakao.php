@@ -66,15 +66,18 @@ class Hybrid_Providers_Kakao extends Hybrid_Provider_Model_OAuth2
     */
     function getUserProfile()
     {
-        $data = json_decode ( $this->api->get("user/me") );
+        $data = $this->api->get("user/me");
 
         if ( ! isset( $data->id ) ) {
             throw new Exception("User profile request failed! {$this->providerId} returned an invalid response.", 6);
         }
+
         # store the user profile.
-        $this->user->profile->identifier  = @ $data->id;
-        $this->user->profile->displayName = @ $data->properties->nickname;
-        $this->user->profile->photoURL    = @ $data->properties->thumbnail_image;
+        $this->user->profile->identifier    = @ $data->id;
+        $this->user->profile->displayName   = @ $data->properties->nickname;
+        $this->user->profile->email         = @ $data->kaccount_email;
+        $this->user->profile->emailVerified = @ $data->kaccount_email_verified ? @ $data->kaccount_email : '';
+        $this->user->profile->photoURL      = @ $data->properties->thumbnail_image;
 
         return $this->user->profile;
     }
@@ -85,7 +88,8 @@ class Hybrid_Providers_Kakao extends Hybrid_Provider_Model_OAuth2
             "grant_type"    => "authorization_code",
             "client_id"     => $this->api->client_id,
             "redirect_uri"  => $this->api->redirect_uri,
-            "code"          => $code
+            "code"          => $code,
+            "client_secret" => $this->api->client_secret
         );
 
         $response = $this->request($this->api->token_url, $params, $this->api->curl_authenticate_method);
